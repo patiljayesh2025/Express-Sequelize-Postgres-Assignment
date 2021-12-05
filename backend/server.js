@@ -1,6 +1,8 @@
 var express = require("express");
 const app = express();
 var bodyParser = require('body-parser');
+var cors = require('cors');
+app.use(cors());
 
 app.use(bodyParser.urlencoded());
 app.use(bodyParser.json());
@@ -21,7 +23,7 @@ const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
         idle: dbConfig.pool.idle
     }
 });
-sequelize.sync().then(() => console.log(synced)).catch(err => console.log(err));
+sequelize.sync().then(() => console.log("synced")).catch(err => console.log(err));
 const db = {};
 db.Sequelize = Sequelize;
 db.sequelize = sequelize;
@@ -43,7 +45,7 @@ app.get('/getAllPolicies', function(req, res) {
 
 app.get('/getPolicyById/:Id', function(req, res) {
 
-    policy.findByPk(req.params.Id).then((data) => res.status(200).send(data))
+    policy.findByPk(Number(req.params.Id)).then((data) => res.status(200).send(data))
         .catch((err) => res.status(400).send("Error Occured " + err))
 })
 
@@ -70,16 +72,19 @@ app.put('/updatePolicyData', function(req, res) {
         Nominee: req.body.Nominee
     }, {
         where: { PolicyNumber: req.body.PolicyNumber }
-    }).then(data => res.status(201).send("Records updated successfully ")).catch(err => res.status(400).send("Error occured" + err))
+    }).then(data => res.status(200).send("Records updated successfully ")).catch(err => res.status(400).send("Error occured" + err))
 
 
 })
 
 
+
 app.delete('/deletePolicyData/:Id', function(req, res) {
 
     policy.destroy({
-        where: { PolicyNumber: req.params.Id }
+        where: {
+            PolicyNumber: Number(req.params.Id)
+        }
     }).then(() => res.status(200).send("Record deleted successfully")).catch(err => res.status(400).send("Erro Occured " + err));
 
 
@@ -104,13 +109,16 @@ app.post('/login', function(req, res) {
 
     credentials.findByPk(req.body.User_ID).then((data) => {
 
-            if (data) {
-                if (data.Password === req.body.Password) {
-                    res.status(200).send("Successfully Login")
-                }
+        if (data) {
+            if (data.Password === req.body.Password) {
+                res.json("Successfully Loggedin")
+            } else {
+                res.send("Check user name or password")
             }
-        })
-        .catch((err) => res.status(401).send("Login fails"));
+        }
+
+    }).catch(err => res.status(401).send("Error occured"));
+
 
 
 })
